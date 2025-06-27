@@ -34,6 +34,7 @@ connectDB().catch((err) => console.log(err));
 const allowedOrigins = [
   'https://quick-court-your-smart-sports-slot-rho.vercel.app',
   'https://quick-court-your-smart-git-5a37f8-tohid-khans-projects-1ef85432.vercel.app',
+  'https://quick-court-your-smart-sports-slot-968k-7hq92424u.vercel.app',
   'http://localhost:3000'
 ];
 

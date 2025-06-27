@@ -8,7 +8,7 @@ const nodemailer = require("nodemailer");
 
 const crypto = require("crypto");
 const API_URL =
-  process.env.NODE_ENV === "development"
+  process.env.NODE_ENV === "production"
     ? process.env.LOCALURL
     : process.env.GLOBALURL;
     

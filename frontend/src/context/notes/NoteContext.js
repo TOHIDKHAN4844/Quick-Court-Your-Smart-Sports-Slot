@@ -5,7 +5,7 @@ import React, { createContext, useState } from "react";
 export const NoteContext = createContext();
 
 export function NoteProvider(props) {
-    const HOST = "http://localhost:5000";
+    const HOST = "https://quick-court-your-smart-git-a96e33-tohid-khans-projects-1ef85432.vercel.app";
     const initialNotes = [];
 
     const [notes, setNotes] = useState(initialNotes);

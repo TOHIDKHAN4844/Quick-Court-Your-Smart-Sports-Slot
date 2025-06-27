@@ -6,7 +6,7 @@ const cookieParser = require("cookie-parser");
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-const serverless = require("serverless-http"); // ✅ IMPORTANT for Vercel
+const serverless = require("serverless-http");
 
 // Routes
 const authRoute = require("./routes/auth");
@@ -33,29 +33,27 @@ connectDB().catch((err) => console.log(err));
 // CORS configuration
 const allowedOrigins = [
   'http://localhost:3000',
-  'http://localhost:5000',
-  'http://localhost:5173',
+  'https://quick-court-your-smart-git-a96e33-tohid-khans-projects-1ef85432.vercel.app',
   'https://quick-court-your-smart-sports-slot-rho.vercel.app'
 ];
 
 const corsOptions = {
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    console.log("Origin:", origin); // Debug log
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      console.log('Origin not allowed by CORS:', origin);
-      callback(null, false);
+      console.log('Blocked by CORS:', origin);
+      callback(new Error("Not allowed by CORS"));
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  credentials: true,
-  preflightContinue: false,
-  optionsSuccessStatus: 204
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 };
 
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
+app.options('*', cors(corsOptions)); // Preflight handler
 
 // Middleware
 app.use(cookieParser());
@@ -71,7 +69,7 @@ app.use("/api/centres", centres);
 app.use("/api/createBooking", createBooking);
 app.use("/api/User", Users1);
 
-// Error handling middleware
+// Error handling
 app.use((err, req, res, next) => {
   console.error(err.stack);
   const { statusCode = 500 } = err;
@@ -79,7 +77,6 @@ app.use((err, req, res, next) => {
   res.status(statusCode).json({ success: false, message: err.message });
 });
 
-// ✅ No app.listen() — Vercel handles this
-
+// ✅ Export serverless handler
 module.exports = app;
-module.exports.handler = serverless(app); // ✅ Wrap for Vercel Serverless
+module.exports.handler = serverless(app);

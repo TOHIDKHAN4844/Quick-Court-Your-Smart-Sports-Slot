@@ -1,14 +1,15 @@
-// server.js or app.js
-
 if (process.env.NODE_ENV !== "production") {
   require("dotenv").config();
 }
+
 const cookieParser = require("cookie-parser");
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-const authRoute = require("./routes/auth");
+const serverless = require("serverless-http"); // ✅ IMPORTANT for Vercel
 
+// Routes
+const authRoute = require("./routes/auth");
 const centres = require("./routes/centres");
 const createBooking = require("./routes/createBooking");
 const Users1 = require("./routes/users");
@@ -16,16 +17,18 @@ const Users1 = require("./routes/users");
 // Express initialization
 const app = express();
 
-// Mongoose initialization
+// Mongoose initialization (runs on cold start)
 const dbUrl = process.env.DB_URL;
-async function main() {
-  await mongoose.connect(dbUrl, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  });
-  console.log("Database connected");
+async function connectDB() {
+  if (mongoose.connection.readyState === 0) {
+    await mongoose.connect(dbUrl, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log("Database connected");
+  }
 }
-main().catch((err) => console.log(err));
+connectDB().catch((err) => console.log(err));
 
 // CORS configuration
 const allowedOrigins = [
@@ -37,7 +40,6 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl requests)
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
@@ -53,8 +55,6 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-
-// Handle preflight requests
 app.options('*', cors(corsOptions));
 
 // Middleware
@@ -63,7 +63,7 @@ app.use(express.json());
 
 // Routes
 app.get("/", (req, res) => {
-  res.send("Hello world");
+  res.send("Hello world from Quick Court API!");
 });
 
 app.use("/api/auth", authRoute);
@@ -79,8 +79,7 @@ app.use((err, req, res, next) => {
   res.status(statusCode).json({ success: false, message: err.message });
 });
 
-// Start the server
-const port = process.env.PORT || 8080;
-app.listen(port, () => {
-  console.log(`Listening to the port ${port}`);
-});
+// ✅ No app.listen() — Vercel handles this
+
+module.exports = app;
+module.exports.handler = serverless(app); // ✅ Wrap for Vercel Serverless

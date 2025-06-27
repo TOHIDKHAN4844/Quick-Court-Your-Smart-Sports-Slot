@@ -32,9 +32,9 @@ connectDB().catch((err) => console.log(err));
 
 // CORS configuration
 const allowedOrigins = [
-  'http://localhost:3000',
-  'https://quick-court-your-smart-git-a96e33-tohid-khans-projects-1ef85432.vercel.app',
-  'https://quick-court-your-smart-sports-slot-rho.vercel.app'
+  'https://quick-court-your-smart-sports-slot-rho.vercel.app',
+  'https://quick-court-your-smart-git-5a37f8-tohid-khans-projects-1ef85432.vercel.app',
+  'http://localhost:3000'
 ];
 
 const corsOptions = {

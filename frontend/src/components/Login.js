@@ -1,7 +1,6 @@
 // Login.js
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-
 import config from "../config";
 
 import {
@@ -18,56 +17,53 @@ import { useNavigate, Link } from "react-router-dom";
 // import FacebookIcon from "@mui/icons-material/Facebook";
 // import GoogleIcon from "mdi-material-ui/Google"; // Import GoogleIcon
 
-
-
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [errorMessage, setErrorMessage] = useState(""); // Added for error handling
-  const [loading, setLoading] = useState(false); // Loading state
-  const navigate = useNavigate(); // Initialize useNavigate
+  const [errorMessage, setErrorMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  // Function to clear the error message after 4 seconds
   useEffect(() => {
     let timer;
     if (errorMessage) {
       timer = setTimeout(() => {
         setErrorMessage("");
-      }, 4000); // Clear error message after 4 seconds
+      }, 4000);
     }
-    
     return () => {
-      if (timer) clearTimeout(timer); // Clean up the timer if component unmounts
+      if (timer) clearTimeout(timer);
     };
   }, [errorMessage]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrorMessage(""); // Reset error message before new submission
-    setLoading(true); // Start loader
-
+    setErrorMessage("");
+    setLoading(true);
 
     try {
       console.log("Login API URL:", `${config.API_URL}/api/auth/login`);
 
-      const response = await axios.post(`${config.API_URL}/api/auth/login`, {
-        email,
-        password,
-      });
-
+      const response = await axios.post(
+        `${config.API_URL}/api/auth/login`,
+        {
+          email,
+          password,
+        },
+        {
+          withCredentials: true, // ✅ IMPORTANT FOR COOKIES & CORS
+        }
+      );
 
       console.log("Login successful", response.data);
 
-      // Save user ID and authToken in local storage
       localStorage.setItem("userId", response.data.userId);
       localStorage.setItem("authToken", response.data.authToken);
       localStorage.setItem("userRole", response.data.user.role);
 
-      // Redirect to the home page
       navigate("/home");
     } catch (error) {
       if (error.response) {
-        // Handle specific status codes
         if (error.response.status === 401) {
           setErrorMessage("Invalid email or password.");
         } else if (error.response.status === 500) {
@@ -79,24 +75,20 @@ const Login = () => {
           );
         }
       } else if (error.request) {
-        // Request was made but no response received
         setErrorMessage("No response from the server. Please try again.");
       } else {
-        // Other errors
         setErrorMessage(error.message);
       }
     } finally {
-      setLoading(false); // Stop loader
+      setLoading(false);
     }
 
-    // Clear the form
     setEmail("");
     setPassword("");
   };
 
   return (
     <Container component="main" maxWidth="xs">
-      {/* Loader */}
       <Backdrop
         sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
         open={loading}
@@ -116,7 +108,6 @@ const Login = () => {
           Login
         </Typography>
 
-        {/* Display error message if any */}
         {errorMessage && (
           <Alert severity="error" sx={{ width: "100%", mb: 2 }}>
             {errorMessage}
@@ -158,7 +149,6 @@ const Login = () => {
             {loading ? "Logging in..." : "Login"}
           </Button>
 
-          {/* Forgot Password Link */}
           <Typography variant="body2" align="right">
             <Link to="/forgotPassword" style={{ textDecoration: "none" }}>
               Forgot Password?
@@ -173,11 +163,10 @@ const Login = () => {
           </Typography>
         </Box>
 
-        {/* Divider */}
-        {/* <Divider sx={{ my: 2, width: "100%" }}>OR</Divider> */}
+        {/* Social sign-in examples (disabled)
+        <Divider sx={{ my: 2, width: "100%" }}>OR</Divider>
 
-        {/* Social Sign-In Buttons */}
-        {/* <Button
+        <Button
           fullWidth
           variant="outlined"
           startIcon={<GoogleIcon />}

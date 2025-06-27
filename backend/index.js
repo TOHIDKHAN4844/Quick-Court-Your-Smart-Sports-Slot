@@ -32,7 +32,7 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5000',
   'http://localhost:5173',
-  'https://court-booking-system.vercel.app'
+  'https://quick-court-your-smart-sports-slot-rho.vercel.app'
 ];
 
 const corsOptions = {

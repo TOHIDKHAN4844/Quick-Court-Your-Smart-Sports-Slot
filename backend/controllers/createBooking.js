@@ -7,45 +7,59 @@ const Sport = require("../models/Sports");
 
 const getAvailableSlots = async (req, res) => {
   const { centre, sport, date } = req.body;
-  console.log(centre, sport, date);
+
   try {
     const courts = await Court.find({
       sport: new mongoose.Types.ObjectId(sport),
     });
 
+    // All bookings for that day (from 12:00 to next 12:00)
+    const baseDate = new Date(`${date}T00:00:00+05:30`);
+    const nextDay = new Date(baseDate.getTime() + 36 * 60 * 60 * 1000); // 36 hours for buffer
+
     const bookings = await Booking.find({
       centre: new mongoose.Types.ObjectId(centre),
       sport: new mongoose.Types.ObjectId(sport),
-      date,
+      startDateTime: { $gte: baseDate, $lt: nextDay },
     });
-    console.log(bookings);
 
-    const startHour = 8;
-    const endHour = 20;
-    const timeSlots = [];
-
-    for (let hour = startHour; hour < endHour; hour++) {
-      timeSlots.push(`${hour.toString().padStart(2, "0")}:00`);
+    // Time slots: 1:30 PM to 1:30 AM next day, in 30-min steps
+    const slots = [];
+    const slotStart = new Date(`${date}T13:30:00+05:30`);
+    for (let i = 0; i < 24; i++) {
+      const start = new Date(slotStart.getTime() + i * 30 * 60 * 1000);
+      const end = new Date(start.getTime() + 30 * 60 * 1000);
+      if (end > slotStart.getTime() + 12 * 60 * 60 * 1000) break; // stop at +12h (1:30AM)
+      slots.push({ start, end });
     }
 
     const bookedSlotsMap = {};
-    bookings.forEach((booking) => {
-      const courtId = booking.court.toString();
-      if (!bookedSlotsMap[courtId]) {
-        bookedSlotsMap[courtId] = new Set();
-      }
-      bookedSlotsMap[courtId].add(booking.startTime);
+    bookings.forEach((b) => {
+      const courtId = b.court.toString();
+      if (!bookedSlotsMap[courtId]) bookedSlotsMap[courtId] = [];
+      bookedSlotsMap[courtId].push({ start: b.startDateTime, end: b.endDateTime });
     });
 
     const availableSlotsPerCourt = courts.map((court) => {
       const courtId = court._id.toString();
-      const availableSlots = timeSlots.filter(
-        (slot) => !bookedSlotsMap[courtId]?.has(slot)
-      );
+      const booked = bookedSlotsMap[courtId] || [];
+
+      const available = slots.filter((slot) => {
+        return !booked.some(
+          (b) => slot.start < b.end && slot.end > b.start
+        );
+      });
 
       return {
         court: court,
-        availableSlots: availableSlots,
+        availableSlots: available.map((s) =>
+          s.start.toLocaleTimeString("en-IN", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true,
+            timeZone: "Asia/Kolkata",
+          })
+        ),
       };
     });
 
@@ -63,12 +77,6 @@ const createBooking = async (req, res) => {
   const { centre_id, sport_id, court_id, user_id, date, startTime } = req.body;
 
   try {
-    if (!isValidStartTime(startTime)) {
-      return res
-        .status(404)
-        .json({ error: "Center will be closed at that time." });
-    }
-
     const centre = await Centre.findById(centre_id);
     if (!centre) return res.status(404).json({ error: "Centre not found" });
 
@@ -81,15 +89,15 @@ const createBooking = async (req, res) => {
     const user = await User.findById(user_id);
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    const endTime = addMinutesToTime(startTime, 60);
+    const startDateTime = combineDateAndTime(date, startTime);
+    const endDateTime = new Date(startDateTime.getTime() + 30 * 60 * 1000);
 
     const existingBooking = await Booking.findOne({
       court: court_id,
-      date: date,
       $or: [
-        { startTime: { $lt: endTime, $gte: startTime } },
-        { endTime: { $gt: startTime, $lte: endTime } },
-        { startTime: { $lte: startTime }, endTime: { $gte: endTime } },
+        { startDateTime: { $lt: endDateTime, $gte: startDateTime } },
+        { endDateTime: { $gt: startDateTime, $lte: endDateTime } },
+        { startDateTime: { $lte: startDateTime }, endDateTime: { $gte: endDateTime } },
       ],
     });
 
@@ -103,10 +111,9 @@ const createBooking = async (req, res) => {
       centre: centre_id,
       sport: sport_id,
       court: court_id,
-      date: date,
-      startTime: startTime,
-      endTime: endTime,
-      user: user._id,
+      user: user_id,
+      startDateTime: startDateTime,
+      endDateTime: endDateTime,
     });
 
     await newBooking.save();
@@ -116,36 +123,16 @@ const createBooking = async (req, res) => {
       booking: newBooking,
     });
   } catch (error) {
-    console.error(error);
-    return res
-      .status(500)
-      .json({ error: "Server error. Unable to create booking." });
+    console.error("Error creating booking:", error);
+    return res.status(500).json({ error: "Server error. Unable to create booking." });
   }
 };
 
-const addMinutesToTime = (time, minutesToAdd) => {
-  const [hours, minutes] = time.split(":").map(Number);
-
-  // Create date in Asia/Kolkata
-  const ist = new Date(
-    new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
-  );
-
-  ist.setHours(hours);
-  ist.setMinutes(minutes + minutesToAdd);
-
-  const newHours = String(ist.getHours()).padStart(2, "0");
-  const newMinutes = String(ist.getMinutes()).padStart(2, "0");
-
-  return `${newHours}:${newMinutes}`;
-};
-
-const isValidStartTime = (startTime) => {
-  const [hours, minutes] = startTime.split(":").map(Number);
-  const startTimeInMinutes = hours * 60 + minutes;
-  const minTimeInMinutes = 8 * 60;
-  const maxTimeInMinutes = 20 * 60;
-  return startTimeInMinutes >= minTimeInMinutes && startTimeInMinutes < maxTimeInMinutes;
-};
+function combineDateAndTime(date, time) {
+  const [year, month, day] = date.split("-").map(Number);
+  const [hour, minute] = time.split(":").map(Number);
+  const ist = new Date(Date.UTC(year, month - 1, day, hour - 5, minute - 30));
+  return new Date(ist.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+}
 
 module.exports = { getAvailableSlots, createBooking };

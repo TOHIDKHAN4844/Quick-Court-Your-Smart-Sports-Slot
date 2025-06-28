@@ -230,17 +230,23 @@ const Home = () => {
     const bookingUrl = `${config.API_URL}/api/centres/book/${selectedCentre._id}/${selectedSport._id}/${selectedCourt._id}/${startTime}/${endTime}:00/${selectedDate}/${userId}`;
     try {
       const res = await axios.post(
-         bookingUrl,
+        bookingUrl,
         {
-          name: "Jabalpur",
+          centre_id: selectedCentre._id,
+          sport_id: selectedSport._id,
+          court_id: selectedCourt._id,
+          user_id: userId,
+          date: selectedDate,
+          startTime: startTime // e.g. "13:30"
         },
         {
           headers: {
-            Authorization: `Bearer ${getToken}`, // Sending token in Authorization header
+            Authorization: `Bearer ${getToken}`,
           },
           withCredentials: true,
         }
       );
+      
       console.log("Booking response:", res.data);
       setSnackbar({
         open: true,
@@ -474,30 +480,7 @@ const Home = () => {
             </Grid>
             {/* Card for Users */}
             <Grid item xs={12} sm={6}>
-              {/* <Card>
-                <CardContent>
-                  <Typography variant="h5" component="h2">
-                    Users
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    color="textSecondary"
-                    component="p"
-                  >
-                    Total Users: {users}
-                  </Typography>
-                 
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    sx={{ mt: 2 }}
-                    component={Link}
-                    to="/ManageCentre"
-                  >
-                    Manage Users
-                  </Button>
-                </CardContent>
-              </Card> */}
+              
             </Grid>
           </Grid>
 

@@ -32,12 +32,13 @@ connectDB().catch((err) => console.log(err));
 
 // CORS configuration
 const allowedOrigins = [
-  process.env.GLOBALURL,  // ✅ your frontend deployed URL
-  process.env.LOCALURL,   // ✅ localhost dev
-  'https://quick-court-your-smart-sports-slot-rho.vercel.app',  // ❓ double check: do you use these?
-  'https://quick-court-your-smart-sports-slot.vercel.app',
-  'https://quick-court-your-smart-sports-slot-968k-7hq92424u.vercel.app',
+  process.env.GLOBALURL,   // your deployed frontend
+  process.env.LOCALURL,    // localhost dev
+  'https://quick-court-your-smart-sports-slot-rho.vercel.app', // optional extra deploys
+  'https://quick-court-your-smart-sports-slot.vercel.app',     // backend URL (not needed for CORS, can remove)
+  'https://quick-court-your-smart-sports-slot-968k-7hq92424u.vercel.app', // optional preview deploys
 ];
+
 
 const corsOptions = {
   origin: function (origin, callback) {

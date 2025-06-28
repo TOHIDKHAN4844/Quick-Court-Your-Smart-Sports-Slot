@@ -40,11 +40,10 @@ const getBookingDetails = async (req, res) => {
         path: "court",
         select: "name",
       })
-      .select("startDateTime endDateTime");
+      .select("date startTime endTime");
 
     const formattedBookings = bookings.map((booking) => {
-      const startDate = new Date(booking.startDateTime);
-      const endDate = new Date(booking.endDateTime);
+      const date = new Date(booking.date);
 
       const formattedDate = new Intl.DateTimeFormat("en-IN", {
         weekday: "long",
@@ -52,7 +51,21 @@ const getBookingDetails = async (req, res) => {
         month: "2-digit",
         year: "numeric",
         timeZone: "Asia/Kolkata",
-      }).format(startDate);
+      }).format(date);
+
+      // Combine date + startTime with IST
+      const [startHour, startMinute] = booking.startTime.split(":").map(Number);
+      const [endHour, endMinute] = booking.endTime.split(":").map(Number);
+
+      const baseDate = new Date(
+        new Date(date).toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+      );
+
+      const startDate = new Date(baseDate);
+      startDate.setHours(startHour, startMinute, 0, 0);
+
+      const endDate = new Date(baseDate);
+      endDate.setHours(endHour, endMinute, 0, 0);
 
       const startTimeIST = startDate.toLocaleTimeString("en-IN", {
         hour: "2-digit",

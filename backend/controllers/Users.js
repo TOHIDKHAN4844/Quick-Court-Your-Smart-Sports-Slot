@@ -4,7 +4,6 @@ const Courts = require("../models/Courts");
 const mongoose = require("mongoose");
 const Bookings = require("../models/Bookings");
 const User = require("../models/Users");
-const moment = require("moment");
 
 const getUserDetails = async (req, res) => {
   const UserId1 = req.params.userId1;
@@ -18,7 +17,6 @@ const getUserDetails = async (req, res) => {
 
 const getAllUsers = async (req, res) => {
   try {
-    // Find all users where the role is not 'manager'
     const users = await User.find({ role: { $ne: "manager" } });
     res.status(200).json({ success: true, users });
   } catch (err) {
@@ -44,53 +42,56 @@ const getBookingDetails = async (req, res) => {
       })
       .select("date startTime endTime");
 
-      const booking = bookings.map((booking) => {
-        // Format the booking date to Indian format
-        const date = new Date(booking.date);
-        const formattedDate = new Intl.DateTimeFormat("en-IN", {
-          weekday: "long",
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-          timeZone: "Asia/Kolkata",
-        }).format(date);
-      
-        // Split time string and construct Date in IST without using UTC (Z)
-        const [startHour, startMinute] = booking.startTime.split(":");
-        const [endHour, endMinute] = booking.endTime.split(":");
-      
-        const startTimeDate = new Date();
-        startTimeDate.setHours(Number(startHour), Number(startMinute), 0);
-      
-        const endTimeDate = new Date();
-        endTimeDate.setHours(Number(endHour), Number(endMinute), 0);
-      
-        const startTimeIST = startTimeDate.toLocaleTimeString("en-IN", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-          timeZone: "Asia/Kolkata",
-        });
-      
-        const endTimeIST = endTimeDate.toLocaleTimeString("en-IN", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-          timeZone: "Asia/Kolkata",
-        });
-      
-        return {
-          centre: booking.centre.name,
-          sport: booking.sport.name,
-          court: booking.court.name,
-          date: formattedDate,
-          startTime: startTimeIST,
-          endTime: endTimeIST,
-        };
-      });
-      
+    const formattedBookings = bookings.map((booking) => {
+      const date = new Date(booking.date);
 
-    res.json(booking);
+      const formattedDate = new Intl.DateTimeFormat("en-IN", {
+        weekday: "long",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        timeZone: "Asia/Kolkata",
+      }).format(date);
+
+      // Combine date + startTime with IST
+      const [startHour, startMinute] = booking.startTime.split(":").map(Number);
+      const [endHour, endMinute] = booking.endTime.split(":").map(Number);
+
+      const baseDate = new Date(
+        new Date(date).toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+      );
+
+      const startDate = new Date(baseDate);
+      startDate.setHours(startHour, startMinute, 0, 0);
+
+      const endDate = new Date(baseDate);
+      endDate.setHours(endHour, endMinute, 0, 0);
+
+      const startTimeIST = startDate.toLocaleTimeString("en-IN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+        timeZone: "Asia/Kolkata",
+      });
+
+      const endTimeIST = endDate.toLocaleTimeString("en-IN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+        timeZone: "Asia/Kolkata",
+      });
+
+      return {
+        centre: booking.centre.name,
+        sport: booking.sport.name,
+        court: booking.court.name,
+        date: formattedDate,
+        startTime: startTimeIST,
+        endTime: endTimeIST,
+      };
+    });
+
+    res.json(formattedBookings);
   } catch (error) {
     console.error("Error fetching booking details:", error);
     res.status(500).json({ error: "Failed to fetch booking details" });

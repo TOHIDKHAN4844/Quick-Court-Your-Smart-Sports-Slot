@@ -28,34 +28,68 @@ const getAllUsers = async (req, res) => {
 const getBookingDetails = async (req, res) => {
   try {
     const bookings = await Bookings.find({ user: req.params.userId1 })
-      .populate("centre", "name location")
-      .populate("sport", "name")
-      .populate("court", "name");
+      .populate({
+        path: "centre",
+        select: "name location",
+      })
+      .populate({
+        path: "sport",
+        select: "name",
+      })
+      .populate({
+        path: "court",
+        select: "name",
+      })
+      .select("date startTime endTime");
 
-    const formattedBookings = bookings.map((b) => ({
-      centre: b.centre.name,
-      sport: b.sport.name,
-      court: b.court.name,
-      date: new Intl.DateTimeFormat("en-IN", {
+    const formattedBookings = bookings.map((booking) => {
+      const date = new Date(booking.date);
+
+      const formattedDate = new Intl.DateTimeFormat("en-IN", {
         weekday: "long",
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
         timeZone: "Asia/Kolkata",
-      }).format(b.startDateTime),
-      startTime: b.startDateTime.toLocaleTimeString("en-IN", {
+      }).format(date);
+
+      // Combine date + startTime with IST
+      const [startHour, startMinute] = booking.startTime.split(":").map(Number);
+      const [endHour, endMinute] = booking.endTime.split(":").map(Number);
+
+      const baseDate = new Date(
+        new Date(date).toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+      );
+
+      const startDate = new Date(baseDate);
+      startDate.setHours(startHour, startMinute, 0, 0);
+
+      const endDate = new Date(baseDate);
+      endDate.setHours(endHour, endMinute, 0, 0);
+
+      const startTimeIST = startDate.toLocaleTimeString("en-IN", {
         hour: "2-digit",
         minute: "2-digit",
         hour12: true,
         timeZone: "Asia/Kolkata",
-      }),
-      endTime: b.endDateTime.toLocaleTimeString("en-IN", {
+      });
+
+      const endTimeIST = endDate.toLocaleTimeString("en-IN", {
         hour: "2-digit",
         minute: "2-digit",
         hour12: true,
         timeZone: "Asia/Kolkata",
-      }),
-    }));
+      });
+
+      return {
+        centre: booking.centre.name,
+        sport: booking.sport.name,
+        court: booking.court.name,
+        date: formattedDate,
+        startTime: startTimeIST,
+        endTime: endTimeIST,
+      };
+    });
 
     res.json(formattedBookings);
   } catch (error) {

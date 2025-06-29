@@ -1,16 +1,16 @@
----
+# 🏀 Quick Court — Your Smart Sports Slot
 
-# 🏀 Court Booking System
+**Quick Court** is a full-stack **MERN** web application designed to streamline the **sports court booking experience** across multiple centers.  
+Users can **register, log in, explore available centres, view sports and courts, and book time slots easily and securely**.  
+The platform also includes a powerful **admin panel** for managers to manage centres, sports, courts, and bookings — built with modern design and a scalable backend.
 
-A full-stack MERN web application designed to streamline the **sports court booking experience** at various centers. Users can register, log in, explore available centres, view sports and courts, and book time slots seamlessly. The platform also features a robust admin panel for managing content, built with modern design and scalable backend practices.
 
----
 
 ## 🌐 Live Demo
 
-Coming Soon... (or add your deployed URL here if hosted)
+🔗 [Quick Court - Your Smart Sports Slot](https://quick-court-your-smart-sports-slot-chi.vercel.app)
 
----
+
 
 ## 📌 Table of Contents
 
@@ -25,7 +25,6 @@ Coming Soon... (or add your deployed URL here if hosted)
 * [License](#-license)
 * [Contact](#-contact)
 
----
 
 ## ⚙️ Tech Stack
 
@@ -56,38 +55,37 @@ Coming Soon... (or add your deployed URL here if hosted)
 * **ESLint** – code linting
 * **Nodemon** – backend hot reload
 
----
+
 
 ## 🚀 Features
 
 ### 👤 User
 
-* ✅ Register with email and password
-* ✅ OTP verification during signup and password reset
-* ✅ Login/logout functionality
-* ✅ Book courts by selecting centre, sport, court, date, and time
-* ✅ View booking history
-* ✅ Profile management
+*  Register with email and password
+*  OTP verification during signup and password reset
+*  Login/logout functionality
+*  Book courts by selecting centre, sport, court, date, and time
+*  View booking history
+*  Profile management
 
 ### 🔐 Admin / Manager
 
-* ✅ Role-based access via JWT
-* ✅ Add new centres, sports, and courts
-* ✅ Manage users and bookings
-* ✅ View all users and their booking data
+*  Role-based access via JWT
+*  Add new centres, sports, and courts
+*  Manage users and bookings
+*  View all users and their booking data
 
 ### 📩 Notifications
 
-* ✅ OTP for account/email verification
-* ✅ Booking confirmation via email
+*  OTP for account/email verification
+*  Booking confirmation via email
 
 ### 💻 UI/UX
 
-* ✅ Fully responsive UI with MUI & Bootstrap
-* ✅ Clean navigation with protected routes
-* ✅ Friendly error/success messages
+*  Fully responsive UI with MUI & Bootstrap
+*  Clean navigation with protected routes
+*  Friendly error/success messages
 
----
 
 ## 🗂 Folder Structure
 
@@ -116,7 +114,7 @@ Booking-System-main/
 ├── README.md
 ```
 
----
+
 
 ## 🔑 Environment Variables
 
@@ -145,7 +143,7 @@ REACT_APP_GLOBALURL=http://localhost:5000
 
 > 🔁 Restart both frontend and backend servers after modifying `.env` files.
 
----
+
 
 ## 🧩 Installation & Setup
 
@@ -155,16 +153,16 @@ REACT_APP_GLOBALURL=http://localhost:5000
 * npm or yarn
 * MongoDB (local or MongoDB Atlas)
 
----
+
 
 ### 1️⃣ Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/Booking-System-main.git
-cd Booking-System-main
+git clone https://github.com/TOHIDKHAN4844/Quick-Court-Your-Smart-Sports-Slot.git
+cd Quick Court
 ```
 
----
+
 
 ### 2️⃣ Backend Setup
 
@@ -175,7 +173,7 @@ npm install
 
 Then, create a `.env` file as shown above.
 
----
+
 
 ### 3️⃣ Frontend Setup
 
@@ -186,7 +184,6 @@ npm install
 
 Ensure `.env` contains the correct API URL.
 
----
 
 ## 🚦 Running the Application
 
@@ -210,7 +207,7 @@ npm run both
 
 > This requires `concurrently` to be installed in root or frontend.
 
----
+
 
 ## 📡 API Endpoints
 
@@ -235,7 +232,7 @@ Here’s a summary of available endpoints:
 | GET    | `/api/User/getUserDetailS/:userId1`                      | Get user details            |
 | GET    | `/api/User/getBookingDetailS/:userId1`                   | Get booking history         |
 
----
+
 
 ## 🧑‍💻 Contributing
 
@@ -248,19 +245,11 @@ Here’s a summary of available endpoints:
 
 Suggestions, improvements, and feature requests are welcome!
 
----
-
-## 📄 License
-
-This project is licensed under the [MIT License](https://opensource.org/licenses/MIT).
-
----
 
 ## 📬 Contact
 
-**Author:** *Tohid Khan*
-**GitHub:** [@yourusername](https://github.com/yourusername)
-**LinkedIn:** [linkedin.com/in/your-linkedin](https://linkedin.com/in/your-linkedin)
-**Email:** [your.email@example.com](mailto:your.email@example.com)
+**Developed By:** *Tohid Khan*
+**GitHub:** [TOHIDKHAN4844](https://github.com/TOHIDKHAN4844)
+**LinkedIn:** [tohid-khan-937509258](https://www.linkedin.com/in/tohid-khan-937509258/)
+**Email:** [tohid3707@gmail.com](mailto:tohid3707@gmail.com)
 
----

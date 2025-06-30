@@ -24,6 +24,7 @@ The platform also includes a powerful **admin panel** for managers to manage cen
 * [Contributing](#-contributing)
 * [License](#-license)
 * [Contact](#-contact)
+* [Recent Improvements](#recent-improvements)
 
 
 ## ⚙️ Tech Stack
@@ -32,7 +33,7 @@ The platform also includes a powerful **admin panel** for managers to manage cen
 
 * **React** (with Hooks & Context)
 * **React Router DOM** – routing/navigation
-* **Material UI (MUI)** – UI components
+* **Material UI (MUI)** – UI components & responsive grid
 * **Bootstrap** – responsive layout styling
 * **Axios** – API handling
 * **Day.js** – date manipulation
@@ -45,7 +46,7 @@ The platform also includes a powerful **admin panel** for managers to manage cen
 * **JWT (JSON Web Tokens)** – auth
 * **Bcrypt.js** – password hashing
 * **Joi** – data validation
-* **Nodemailer** – OTP/email delivery
+* **Nodemailer** – OTP/email delivery & password reset
 * **dotenv** – environment management
 * **CORS** – cross-origin API access
 
@@ -67,6 +68,8 @@ The platform also includes a powerful **admin panel** for managers to manage cen
 *  Book courts by selecting centre, sport, court, date, and time
 *  View booking history
 *  Profile management
+*  **Password reset via real email link** (secure, token-based)
+*  **Instant, clear feedback for all actions** (success/error messages)
 
 ### 🔐 Admin / Manager
 
@@ -74,17 +77,30 @@ The platform also includes a powerful **admin panel** for managers to manage cen
 *  Add new centres, sports, and courts
 *  Manage users and bookings
 *  View all users and their booking data
+*  **Centralized data management** (no repeated API calls, fast dashboard)
 
 ### 📩 Notifications
 
 *  OTP for account/email verification
 *  Booking confirmation via email
+*  **Password reset link sent to email** (secure, expires after 30 minutes)
 
 ### 💻 UI/UX
 
-*  Fully responsive UI with MUI & Bootstrap
-*  Clean navigation with protected routes
+*  **Fully responsive UI** with MUI & Bootstrap — works perfectly on all screen sizes (mobile, tablet, laptop, desktop)
+*  Modern, clean, and intuitive design
+*  Sidebar and navigation adapt to device (hamburger menu on mobile)
+*  All tables, forms, and cards are mobile-optimized
+*  **No horizontal scroll on mobile** — everything fits and is touch-friendly
+*  **Centralized data context** for fast, smooth navigation (no repeated loading)
 *  Friendly error/success messages
+
+### ⚡ Performance & Robustness
+
+*  **Centralized data caching**: fetches static data only once per session, reuses everywhere
+*  **Memory leak prevention**: all async React code is safe and robust
+*  **Improved error handling**: backend and frontend both provide clear, actionable errors
+*  **Optimized for speed**: minimal API calls, instant dashboard updates
 
 
 ## 🗂 Folder Structure
@@ -211,7 +227,7 @@ npm run both
 
 ## 📡 API Endpoints
 
-Here’s a summary of available endpoints:
+Here's a summary of available endpoints:
 
 | Method | Endpoint                                                 | Description                 |
 | ------ | -------------------------------------------------------- | --------------------------- |

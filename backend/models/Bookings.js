@@ -88,37 +88,31 @@ BookingSchema.methods.getFormattedDate = function() {
 
 // Add a method to get formatted time
 BookingSchema.methods.getFormattedStartTime = function() {
-  // Handle both HH:MM and HH:MM:SS formats
-  const timeParts = this.startTime.split(':');
-  const hour = parseInt(timeParts[0]);
-  const minute = parseInt(timeParts[1]);
-  
-  const date = new Date(this.date);
-  date.setHours(hour, minute, 0, 0);
-  
-  return date.toLocaleTimeString("en-IN", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-    timeZone: "Asia/Kolkata",
-  });
+  // Use dayjs.tz to ensure correct IST time regardless of server timezone
+  const dayjs = require('dayjs');
+  const timezone = require('dayjs/plugin/timezone');
+  const utc = require('dayjs/plugin/utc');
+  if (!dayjs.tz) {
+    dayjs.extend(utc);
+    dayjs.extend(timezone);
+  }
+  const [hour, minute] = this.startTime.split(':').map(Number);
+  const d = dayjs(this.date).tz('Asia/Kolkata').hour(hour).minute(minute).second(0).millisecond(0);
+  return d.format('hh:mm A'); // 12-hour format with AM/PM
 };
 
 BookingSchema.methods.getFormattedEndTime = function() {
-  // Handle both HH:MM and HH:MM:SS formats
-  const timeParts = this.endTime.split(':');
-  const hour = parseInt(timeParts[0]);
-  const minute = parseInt(timeParts[1]);
-  
-  const date = new Date(this.date);
-  date.setHours(hour, minute, 0, 0);
-  
-  return date.toLocaleTimeString("en-IN", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-    timeZone: "Asia/Kolkata",
-  });
+  // Use dayjs.tz to ensure correct IST time regardless of server timezone
+  const dayjs = require('dayjs');
+  const timezone = require('dayjs/plugin/timezone');
+  const utc = require('dayjs/plugin/utc');
+  if (!dayjs.tz) {
+    dayjs.extend(utc);
+    dayjs.extend(timezone);
+  }
+  const [hour, minute] = this.endTime.split(':').map(Number);
+  const d = dayjs(this.date).tz('Asia/Kolkata').hour(hour).minute(minute).second(0).millisecond(0);
+  return d.format('hh:mm A'); // 12-hour format with AM/PM
 };
 
 module.exports = mongoose.model("Bookings", BookingSchema);

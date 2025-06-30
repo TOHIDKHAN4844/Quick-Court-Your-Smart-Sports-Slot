@@ -31,6 +31,11 @@ import { Search, Refresh, CalendarToday, LocationOn, SportsSoccer, Delete } from
 import config from "../config";
 import Sidebar from "./Sidebar";
 import { useData } from "../context/DataContext";
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const UserDashboard = () => {
   const [bookings, setBookings] = useState([]);
@@ -444,66 +449,70 @@ const UserDashboard = () => {
                 </TableHead>
                 <TableBody>
                   {filteredBookings.length > 0 ? (
-                    filteredBookings.map((booking, index) => (
-                      <TableRow key={index} hover>
-                        <TableCell>
-                          <Box>
-                            <Typography variant="subtitle2" sx={{ fontWeight: "bold" }}>
-                              {booking.centre}
+                    filteredBookings.map((booking, index) => {
+                      const displayStart = dayjs(booking.startDateTimeIST).tz('Asia/Kolkata').format('hh:mm A');
+                      const displayEnd = dayjs(booking.endDateTimeIST).tz('Asia/Kolkata').format('hh:mm A');
+                      return (
+                        <TableRow key={index} hover>
+                          <TableCell>
+                            <Box>
+                              <Typography variant="subtitle2" sx={{ fontWeight: "bold" }}>
+                                {booking.centre}
+                              </Typography>
+                              <Typography variant="caption" color="textSecondary">
+                                {booking.centreLocation || "Location not specified"}
+                              </Typography>
+                            </Box>
+                          </TableCell>
+                          
+                          <TableCell>
+                            <Box>
+                              <Typography variant="subtitle2" sx={{ fontWeight: "bold" }}>
+                                {booking.sport}
+                              </Typography>
+                              <Typography variant="caption" color="textSecondary">
+                                Court: {booking.court}
+                              </Typography>
+                            </Box>
+                          </TableCell>
+                          
+                          <TableCell>
+                            <Typography variant="body2">
+                              {booking.date}
                             </Typography>
-                            <Typography variant="caption" color="textSecondary">
-                              {booking.centreLocation || "Location not specified"}
+                          </TableCell>
+                          
+                          <TableCell>
+                            <Typography variant="body2">
+                              {displayStart} - {displayEnd}
                             </Typography>
-                          </Box>
-                        </TableCell>
-                        
-                        <TableCell>
-                          <Box>
-                            <Typography variant="subtitle2" sx={{ fontWeight: "bold" }}>
-                              {booking.sport}
-                            </Typography>
-                            <Typography variant="caption" color="textSecondary">
-                              Court: {booking.court}
-                            </Typography>
-                          </Box>
-                        </TableCell>
-                        
-                        <TableCell>
-                          <Typography variant="body2">
-                            {booking.date}
-                          </Typography>
-                        </TableCell>
-                        
-                        <TableCell>
-                          <Typography variant="body2">
-                            {booking.startTime} - {booking.endTime}
-                          </Typography>
-                        </TableCell>
-                        
-                        <TableCell>
-                          <Chip
-                            label={getStatusText(booking)}
-                            color={getStatusColor(booking)}
-                            size="small"
-                            variant="outlined"
-                            sx={{ mr: 1 }}
-                          />
-                          {(getStatusText(booking) === "Upcoming" || getStatusText(booking) === "Today") && (
-                            <Button
-                              variant="outlined"
-                              color="error"
+                          </TableCell>
+                          
+                          <TableCell>
+                            <Chip
+                              label={getStatusText(booking)}
+                              color={getStatusColor(booking)}
                               size="small"
-                              startIcon={<Delete />}
-                              onClick={() => handleCancelBooking(booking._id)}
-                              sx={{ ml: 1 }}
-                              disabled={getStatusText(booking) === "Completed"}
-                            >
-                              Cancel
-                            </Button>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))
+                              variant="outlined"
+                              sx={{ mr: 1 }}
+                            />
+                            {(getStatusText(booking) === "Upcoming" || getStatusText(booking) === "Today") && (
+                              <Button
+                                variant="outlined"
+                                color="error"
+                                size="small"
+                                startIcon={<Delete />}
+                                onClick={() => handleCancelBooking(booking._id)}
+                                sx={{ ml: 1 }}
+                                disabled={getStatusText(booking) === "Completed"}
+                              >
+                                Cancel
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   ) : (
                     <TableRow>
                       <TableCell colSpan={5} align="center">

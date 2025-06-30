@@ -30,6 +30,11 @@ import { Search, FilterList, Refresh } from "@mui/icons-material";
 import config from "../config";
 import Sidebar from "./Sidebar";
 import { useData } from "../context/DataContext";
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const ManagerDashboard = () => {
   const [bookings, setBookings] = useState([]);
@@ -370,7 +375,7 @@ const ManagerDashboard = () => {
                         
                         <TableCell>
                           <Typography variant="body2">
-                            {booking.startTime} - {booking.endTime}
+                            {dayjs(booking.startDateTimeIST).tz('Asia/Kolkata').format('hh:mm A')} - {dayjs(booking.endDateTimeIST).tz('Asia/Kolkata').format('hh:mm A')}
                           </Typography>
                         </TableCell>
                         

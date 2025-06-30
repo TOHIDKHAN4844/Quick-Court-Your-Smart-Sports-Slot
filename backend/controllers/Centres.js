@@ -7,6 +7,23 @@ const User = require("../models/Users");
 const moment = require("moment");
 const { createBookingEmail } = require("../utils/bookingEmailContent");
 const bookingEmail = require("../mailer/bookingEmail");
+const dayjs = require('dayjs');
+const utc = require('dayjs/plugin/utc');
+const timezone = require('dayjs/plugin/timezone');
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+function combineDateAndTimeIST(date, time) {
+  const [hour, minute] = time.split(':');
+  return dayjs(date)
+    .tz('Asia/Kolkata')
+    .hour(Number(hour))
+    .minute(Number(minute))
+    .second(0)
+    .millisecond(0)
+    .toISOString();
+}
+
 const getCentres = async (req, res) => {
   try {
     const centres = await Centres.find();
@@ -148,7 +165,13 @@ const getAvailableSlots = async (req, res) => {
         const slotEnd = `${nextHour.toString().padStart(2, "0")}:${nextMinute
           .toString()
           .padStart(2, "0")}`;
-        slots.push({ startTime: slotStart, endTime: slotEnd });
+        slots.push({
+          startTime: slotStart,
+          endTime: slotEnd,
+          startDateTimeIST: combineDateAndTimeIST(date, slotStart),
+          endDateTimeIST: combineDateAndTimeIST(date, slotEnd),
+          booked: false,
+        });
         startHour = nextHour;
         startMinute = nextMinute;
       }
@@ -179,7 +202,7 @@ const getAvailableSlots = async (req, res) => {
     // *5. Map Time Slots with Booking Status (no bookedBy info)*
     const allSlots = timeSlots.map((slot) => {
       // Check if this slot overlaps with any existing booking
-      const booking = existingBookings.find((b) => {
+      const isBooked = existingBookings.some((b) => {
         // Convert times to minutes for comparison
         const [slotStartHour, slotStartMinute] = slot.startTime.split(":").map(Number);
         const [slotEndHour, slotEndMinute] = slot.endTime.split(":").map(Number);
@@ -196,7 +219,7 @@ const getAvailableSlots = async (req, res) => {
       });
       return {
         ...slot,
-        booked: !!booking
+        booked: isBooked,
       };
     });
 
@@ -274,6 +297,8 @@ const booking = async (req, res) => {
       date: savedBooking.getFormattedDate(),
       startTime: savedBooking.getFormattedStartTime(),
       endTime: savedBooking.getFormattedEndTime(),
+      startDateTimeIST: combineDateAndTimeIST(date, formattedStartTime),
+      endDateTimeIST: combineDateAndTimeIST(date, formattedEndTime),
     };
 
     // Create the email content
@@ -282,7 +307,11 @@ const booking = async (req, res) => {
     res.status(201).json({
       success: true,
       message: "Court booked successfully",
-      booking: newBooking,
+      booking: {
+        ...savedBooking.toObject(),
+        startDateTimeIST: combineDateAndTimeIST(date, formattedStartTime),
+        endDateTimeIST: combineDateAndTimeIST(date, formattedEndTime),
+      },
     });
   } catch (error) {
     console.error("Error creating booking:", error);

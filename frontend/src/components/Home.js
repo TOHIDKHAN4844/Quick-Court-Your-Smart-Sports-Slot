@@ -26,6 +26,10 @@ import Sidebar from "./Sidebar"; // Import the Sidebar component
 import { Link } from "react-router-dom";
 import config from '../config';
 import { useData } from "../context/DataContext";
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const Home = () => {
   const [users, setUsers] = useState([]); // New state for users
@@ -352,7 +356,7 @@ const Home = () => {
                         >
                           <CardContent>
                             <Typography variant="h6">
-                              {slot.startTime} - {slot.endTime}
+                              {slot.startDateTimeIST ? dayjs(slot.startDateTimeIST).tz('Asia/Kolkata').format('hh:mm A') : slot.startTime} - {slot.endDateTimeIST ? dayjs(slot.endDateTimeIST).tz('Asia/Kolkata').format('hh:mm A') : slot.endTime}
                             </Typography>
                             {slot.booked ? (
                               <Typography variant="body2" color="error">

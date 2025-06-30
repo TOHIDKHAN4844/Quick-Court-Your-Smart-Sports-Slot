@@ -4,6 +4,22 @@ const Courts = require("../models/Courts");
 const mongoose = require("mongoose");
 const Bookings = require("../models/Bookings");
 const User = require("../models/Users");
+const dayjs = require('dayjs');
+const utc = require('dayjs/plugin/utc');
+const timezone = require('dayjs/plugin/timezone');
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+function combineDateAndTimeIST(date, time) {
+  const [hour, minute] = time.split(':');
+  return dayjs(date)
+    .tz('Asia/Kolkata')
+    .hour(Number(hour))
+    .minute(Number(minute))
+    .second(0)
+    .millisecond(0)
+    .toISOString();
+}
 
 const getUserDetails = async (req, res) => {
   const UserId1 = req.params.userId1;
@@ -43,6 +59,8 @@ const getBookingDetails = async (req, res) => {
       .sort({ date: -1, startTime: 1 });
 
     const formattedBookings = bookings.map((booking) => {
+      const startDateTimeIST = combineDateAndTimeIST(booking.date, booking.startTime);
+      const endDateTimeIST = combineDateAndTimeIST(booking.date, booking.endTime);
       return {
         _id: booking._id,
         centre: booking.centre.name,
@@ -53,6 +71,8 @@ const getBookingDetails = async (req, res) => {
         startTime: booking.getFormattedStartTime(),
         endTime: booking.getFormattedEndTime(),
         bookingDate: booking.date, // Keep original date for sorting/filtering
+        startDateTimeIST,
+        endDateTimeIST,
       };
     });
 
@@ -85,6 +105,8 @@ const getAllBookings = async (req, res) => {
       .sort({ date: -1, startTime: 1 }); // Sort by date descending, then by start time
 
     const formattedBookings = bookings.map((booking) => {
+      const startDateTimeIST = combineDateAndTimeIST(booking.date, booking.startTime);
+      const endDateTimeIST = combineDateAndTimeIST(booking.date, booking.endTime);
       return {
         _id: booking._id,
         centre: booking.centre.name,
@@ -97,6 +119,8 @@ const getAllBookings = async (req, res) => {
         customerName: booking.user.name,
         customerEmail: booking.user.email,
         bookingDate: booking.date, // Keep original date for sorting/filtering
+        startDateTimeIST,
+        endDateTimeIST,
       };
     });
 

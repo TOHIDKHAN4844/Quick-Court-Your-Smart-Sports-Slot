@@ -37,6 +37,7 @@ if (process.env.NODE_ENV !== "development") {
     'https://quick-court-your-smart-sports-slot-rho.vercel.app',
     'https://quick-court-your-smart-sports-slot.vercel.app',
     'https://quick-court-your-smart-sports-slot-968k-7hq92424u.vercel.app',
+    'https://quick-court-your-smart-sports-slot-chi.vercel.app',
     'http://localhost:3000',
     'http://localhost:5000',
   ];

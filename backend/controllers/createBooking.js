@@ -107,20 +107,38 @@ const createBooking = async (req, res) => {
       });
     }
 
+    // Format times to HH:MM format
+    const formatTime = (time) => {
+      if (time && time.includes(':')) {
+        const parts = time.split(':');
+        return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
+      }
+      return time;
+    };
+
+    const formattedStartTime = formatTime(startTime);
+    const formattedEndTime = formatTime(endDateTime.toTimeString().slice(0, 5));
+
     const newBooking = new Booking({
       centre: centre_id,
       sport: sport_id,
       court: court_id,
       user: user_id,
-      startDateTime: startDateTime,
-      endDateTime: endDateTime,
+      date: new Date(date), // Convert string to Date object
+      startTime: formattedStartTime,
+      endTime: formattedEndTime,
     });
 
     await newBooking.save();
 
     return res.status(201).json({
       message: "Booking created successfully",
-      booking: newBooking,
+      booking: {
+        ...newBooking.toObject(),
+        formattedDate: newBooking.getFormattedDate(),
+        formattedStartTime: newBooking.getFormattedStartTime(),
+        formattedEndTime: newBooking.getFormattedEndTime(),
+      },
     });
   } catch (error) {
     console.error("Error creating booking:", error);

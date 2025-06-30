@@ -15,7 +15,9 @@ import {
   Snackbar,
   Alert, // Added Snackbar and Alert for messages
 } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import config from "../config";
+import { useData } from "../context/DataContext";
 // const API_URL =
 //   process.env.NODE_ENV === "development"
 //     ? process.env.REACT_APP_GLOBALURL
@@ -23,12 +25,12 @@ import config from "../config";
 
 
 const AdminPage = () => {
+  const navigate = useNavigate();
  
   const [centreName, setCentreName] = useState("");
   const [location, setLocation] = useState("");
   const [sportName, setSportName] = useState("");
   const [courtName, setCourtName] = useState("");
-  const [centres, setCentres] = useState([]);
   const [selectedCentre, setSelectedCentre] = useState("");
   const [selectedSport, setSelectedSport] = useState("");
   const [activeForm, setActiveForm] = useState(""); // Tracks which form to display
@@ -37,35 +39,15 @@ const AdminPage = () => {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState("success"); // "success" or "error"
 
-  useEffect(() => {
-    fetchCentres();
-  }, [fetchCentres]); // Add fetchCentres to dependencies
-
-  const fetchCentres = async () => {
-    try {
-      const res = await axios.get(
-        // `${process.env.REACT_APP_GLOBALURL}/api/centres/getCentres`
-        `${config.API_URL}/api/centres/getCentres`
-      );
-      setCentres(res.data);
-    } catch (err) {
-      showMessage("Error fetching centres", "error");
-    }
-  };
-
-  useEffect(() => {
-   fetchSports()
-  }, []);
+  // Use centralized data context
+  const { centres, fetchSportsForCentre, refreshData } = useData();
 
   const fetchSports = async () => {
     try { 
       console.log(selectedCentre+"dcds");
-      const res = await axios.get(
-        // `${process.env.REACT_APP_GLOBALURL}/api/centres/getSports/${selectedCentre}`
-        `${config.API_URL}/api/centres/getSports/${selectedCentre}`
-      );
-      console.log(res.data);
-      setSportAtCentre(res.data);
+      const sportsData = await fetchSportsForCentre(selectedCentre);
+      console.log(sportsData);
+      setSportAtCentre(sportsData);
     } catch (err) {
       showMessage("Error fetching centres", "error");
     }
@@ -80,7 +62,6 @@ const AdminPage = () => {
   const addCentre = async () => {
     try {
       await axios.post(
-        // `${process.env.REACT_APP_GLOBALURL}/api/centres/add-centres`
         `${config.API_URL}/api/centres/add-centres`,
         {
           name: centreName,
@@ -89,7 +70,7 @@ const AdminPage = () => {
       );
       setCentreName("");
       setLocation("");
-      fetchCentres(); // refresh centres list
+      await refreshData(); // Refresh the cache
       setActiveForm(""); // Reset form view
       showMessage("Centre added successfully", "success");
     } catch (err) {
@@ -101,14 +82,13 @@ const AdminPage = () => {
     if (!selectedCentre) return;
     try {
       await axios.post(
-        // `${process.env.REACT_APP_GLOBALURL}/api/centres/add-sport/${selectedCentre}/${sportName}`
         `${config.API_URL}/api/centres/add-sport/${selectedCentre}/${sportName}`,
         {
           name: sportName,
         }
       );
       setSportName("");
-      fetchCentres(); // refresh centres list
+      await refreshData(); // Refresh the cache
       setActiveForm(""); // Reset form view
       showMessage("Sport added successfully", "success");
     } catch (err) {
@@ -120,7 +100,6 @@ const AdminPage = () => {
     if (!selectedSport) return;
     try {
       await axios.post(
-        //`${process.env.REACT_APP_GLOBALURL}/api/centres/add-court/${selectedSport}`
         `${config.API_URL}/api/centres/add-court/${selectedSport}`,
         {
           
@@ -128,7 +107,7 @@ const AdminPage = () => {
         }
       );
       setCourtName("");
-      fetchCentres(); // refresh centres list
+      await refreshData(); // Refresh the cache
       setActiveForm(""); // Reset form view
       showMessage("Court added successfully", "success");
     } catch (err) {
@@ -143,7 +122,7 @@ const AdminPage = () => {
       </Typography>
 
       <Grid container spacing={4}>
-        <Grid item xs={12} md={4}>
+        <Grid item xs={12} md={3}>
           <Button
             variant="contained"
             onClick={() => setActiveForm("centre")}
@@ -152,7 +131,7 @@ const AdminPage = () => {
             Add Centre
           </Button>
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid item xs={12} md={3}>
           <Button
             variant="contained"
             onClick={() => setActiveForm("sport")}
@@ -161,13 +140,23 @@ const AdminPage = () => {
             Add Sport
           </Button>
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid item xs={12} md={3}>
           <Button
             variant="contained"
             onClick={() => setActiveForm("court")}
             fullWidth
           >
             Add Court
+          </Button>
+        </Grid>
+        <Grid item xs={12} md={3}>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => navigate('/manager-dashboard')}
+            fullWidth
+          >
+            View All Bookings
           </Button>
         </Grid>
       </Grid>

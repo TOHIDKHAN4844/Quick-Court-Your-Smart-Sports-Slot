@@ -16,38 +16,20 @@ import {
 import axios from "axios";
 import Sidebar from "./Sidebar"; // Import the Sidebar component
 import config from "../config";
-
-
+import { useData } from "../context/DataContext";
 
 const ManageCentres = () => {
-  const [centres, setCentres] = useState([]);
   const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
     severity: "success",
   });
-  console.log(centres);
-  useEffect(() => {
-    fetchCentres();
-  }, []);
 
-  const fetchCentres = async () => {
-    setLoading(true);
-    try {
-      const res = await axios.get(`${config.API_URL}/api/centres/getCentres/`);
-      setCentres(res.data.centres);
-    } catch (err) {
-      console.error("Error fetching centres:", err);
-      setSnackbar({
-        open: true,
-        message: "Error fetching centres.",
-        severity: "error",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Use centralized data context
+  const { centres, loading: dataLoading, error: dataError } = useData();
+
+  console.log(centres);
 
   const handleSnackbarClose = () => {
     setSnackbar((prev) => ({ ...prev, open: false }));
@@ -103,7 +85,7 @@ const ManageCentres = () => {
         {/* Loader */}
         <Backdrop
           sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
-          open={loading}
+          open={!!dataLoading.centres}
         >
           <CircularProgress color="inherit" />
         </Backdrop>
@@ -111,7 +93,7 @@ const ManageCentres = () => {
         {/* Snackbar for success/error messages */}
         <Snackbar
           open={snackbar.open}
-          autoHideDuration={6000}
+          autoHideDuration={4000}
           onClose={handleSnackbarClose}
           anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
         >

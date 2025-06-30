@@ -49,7 +49,6 @@ const getCentreSports = async (req, res) => {
 const getAvailableCourts = async (req, res) => {
   const { centreId, sportId } = req.params; // Get centre ID and sport ID from request parameters
   const { date } = req.query; // Get date from query parameters
-  // console.log(centreId, sportId, date);
   // Validate input
   if (!date) {
     return res
@@ -61,35 +60,8 @@ const getAvailableCourts = async (req, res) => {
     // Fetch all courts for the specified sport
     const courts = await Courts.find({ sport: sportId });
 
-    // Fetch bookings for the specified sport and date
-    const bookings = await Bookings.find({
-      centre: centreId,
-      sport: sportId,
-      date: {
-        $gte: new Date(date + "T00:00:00.000Z"), // Start of the day
-        $lt: new Date(date + "T23:59:59.999Z"), // End of the day
-      },
-    }).select("court"); // Select only court IDs from bookings
-
-    // Extract booked court IDs
-    const bookedCourtIds = bookings.map((booking) => booking.court.toString());
-
-    // Filter out booked courts from the available courts
-    const availableCourts = courts.filter(
-      (court) => !bookedCourtIds.includes(court._id.toString())
-    );
-
-    // If no courts are available, return a 404 response
-    if (!availableCourts || availableCourts.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message:
-          "No available courts found for this sport on the selected date",
-      });
-    }
-
-    // Send the response with available courts
-    res.json({ success: true, availableCourts });
+    // Always return all courts, regardless of bookings
+    res.json({ success: true, availableCourts: courts });
   } catch (error) {
     console.error("Error fetching available courts:", error);
     res.status(500).json({ success: false, message: "Server Error hai" });
@@ -187,11 +159,9 @@ const getAvailableSlots = async (req, res) => {
     const timeSlots = generateTimeSlots();
 
     // *4. Check Existing Bookings*
-
     // Define start and end of the day for querying
     const startOfDay = new Date(bookingDate);
     startOfDay.setHours(0, 0, 0, 0);
-
     const endOfDay = new Date(bookingDate);
     endOfDay.setHours(23, 59, 59, 999);
 
@@ -204,23 +174,29 @@ const getAvailableSlots = async (req, res) => {
         $gte: startOfDay,
         $lte: endOfDay,
       },
-    }).populate("user", "name email"); // Populate user info (name, email)
+    }).populate("user", "name email");
 
-    // *5. Map Time Slots with Booking Status and Booked By*
+    // *5. Map Time Slots with Booking Status (no bookedBy info)*
     const allSlots = timeSlots.map((slot) => {
-      const booking = existingBookings.find(
-        (booking) => booking.startTime === slot.startTime
-      );
+      // Check if this slot overlaps with any existing booking
+      const booking = existingBookings.find((b) => {
+        // Convert times to minutes for comparison
+        const [slotStartHour, slotStartMinute] = slot.startTime.split(":").map(Number);
+        const [slotEndHour, slotEndMinute] = slot.endTime.split(":").map(Number);
+        const [bookStartHour, bookStartMinute] = b.startTime.split(":").map(Number);
+        const [bookEndHour, bookEndMinute] = b.endTime.split(":").map(Number);
 
+        const slotStart = slotStartHour * 60 + slotStartMinute;
+        const slotEnd = slotEndHour * 60 + slotEndMinute;
+        const bookStart = bookStartHour * 60 + bookStartMinute;
+        const bookEnd = bookEndHour * 60 + bookEndMinute;
+
+        // Overlap if slotStart < bookEnd and slotEnd > bookStart
+        return slotStart < bookEnd && slotEnd > bookStart;
+      });
       return {
         ...slot,
-        booked: !!booking, // true if the slot is booked, false otherwise
-        bookedBy: booking
-          ? {
-              name: booking.user.name, // Adding bookedBy details if slot is booked
-              email: booking.user.email,
-            }
-          : null, // null if slot is not booked
+        booked: !!booking
       };
     });
 
@@ -252,14 +228,26 @@ const booking = async (req, res) => {
   }
 
   try {
-    // Create a new booking document
+    // Format times to HH:MM format (remove seconds if present)
+    const formatTime = (time) => {
+      if (time && time.includes(':')) {
+        const parts = time.split(':');
+        return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
+      }
+      return time;
+    };
+
+    const formattedStartTime = formatTime(startTime);
+    const formattedEndTime = formatTime(endTime);
+
+    // Create a new booking document with proper Date object
     const newBooking = new Bookings({
       centre: mongoose.Types.ObjectId(centreId),
       sport: mongoose.Types.ObjectId(sportId),
       court: mongoose.Types.ObjectId(courtId),
-      date: new Date(date), // Ensure this is the correct format
-      startTime,
-      endTime,
+      date: new Date(date), // Convert string to Date object
+      startTime: formattedStartTime,
+      endTime: formattedEndTime,
       user: mongoose.Types.ObjectId(userId), // Assuming you have the user ID in the request body
     });
 
@@ -270,7 +258,7 @@ const booking = async (req, res) => {
       Courts.findById(courtId),
     ]);
 
-    if (!centre1 || !sport1 || !user1 | !court1) {
+    if (!centre1 || !sport1 || !user1 || !court1) {
       return res.status(404).json({
         success: false,
         message: "Invalid Centre, Sport, or User ID provided",
@@ -283,14 +271,11 @@ const booking = async (req, res) => {
       centreName: centre1.name,
       sportName: sport1.name,
       courtName: court1.name, // Assuming courtId is a string. If you have a Court model, fetch the name similarly.
-      date: savedBooking.date,
-      startTime: savedBooking.startTime,
-      endTime: savedBooking.endTime,
+      date: savedBooking.getFormattedDate(),
+      startTime: savedBooking.getFormattedStartTime(),
+      endTime: savedBooking.getFormattedEndTime(),
     };
 
-
-
-    
     // Create the email content
     const emailContent = createBookingEmail(user1.name, bookingDetails);
     await bookingEmail(user1.email, emailContent);
@@ -300,10 +285,10 @@ const booking = async (req, res) => {
       booking: newBooking,
     });
   } catch (error) {
-    console.error("Error booking court:", error);
+    console.error("Error creating booking:", error);
     res.status(500).json({
       success: false,
-      message: "Failed to book the court",
+      message: "Server Error",
       error: error.message,
     });
   }

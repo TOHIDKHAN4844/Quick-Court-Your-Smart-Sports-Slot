@@ -25,9 +25,9 @@ import axios from "axios";
 import Sidebar from "./Sidebar"; // Import the Sidebar component
 import { Link } from "react-router-dom";
 import config from '../config';
+import { useData } from "../context/DataContext";
 
 const Home = () => {
-  const [centres, setCentres] = useState([]);
   const [users, setUsers] = useState([]); // New state for users
   const [selectedCentre, setSelectedCentre] = useState(null);
   const [sports, setSports] = useState([]);
@@ -62,14 +62,13 @@ const Home = () => {
     severity: "success", // 'success' | 'error' | 'warning' | 'info'
   });
 
+  // Use centralized data context
+  const { centres, fetchSportsForCentre, loading: dataLoading, error: dataError } = useData();
+
   useEffect(() => {
     if (userType === "manager") {
       // Fetch data for manager
-      fetchCentres();
       fetchUsers();
-    } else if (userType === "customer") {
-      // Fetch data for customer
-      fetchCentres();
     }
   }, [userType]);
 
@@ -93,23 +92,6 @@ const Home = () => {
   useEffect(() => {
     fetchAllUsers();
   }, []);
-
-  const fetchCentres = async () => {
-    try {
-      const res = await axios.get(
-        `${config.API_URL}/api/centres/getCentres/`
-      );
-
-      setCentres(res.data.centres);
-    } catch (err) {
-      console.error("Error fetching centres:", err);
-      setSnackbar({
-        open: true,
-        message: "Error fetching centres.",
-        severity: "error",
-      });
-    }
-  };
 
   const fetchUsers = async () => {
     try {
@@ -140,10 +122,8 @@ const Home = () => {
 
     if (centre) {
       try {
-        const res = await axios.get(
-          `${config.API_URL}/api/centres/${centre._id}/sports`
-        );
-        setSports(res.data.sports);
+        const sportsData = await fetchSportsForCentre(centre._id);
+        setSports(sportsData);
       } catch (err) {
         console.error("Error fetching sports:", err);
         setSports([]);
@@ -227,7 +207,7 @@ const Home = () => {
     const getToken = localStorage.getItem("authToken");
     //console.log(getToken);
     axios.defaults.withCredentials = true;
-    const bookingUrl = `${config.API_URL}/api/centres/book/${selectedCentre._id}/${selectedSport._id}/${selectedCourt._id}/${startTime}/${endTime}:00/${selectedDate}/${userId}`;
+    const bookingUrl = `${config.API_URL}/api/centres/book/${selectedCentre._id}/${selectedSport._id}/${selectedCourt._id}/${startTime}/${endTime}/${selectedDate}/${userId}`;
     try {
       const res = await axios.post(
         bookingUrl,
@@ -362,29 +342,27 @@ const Home = () => {
                       <Grid item xs={12} sm={6} md={4} key={index}>
                         <Card
                           sx={{
-              backgroundColor: selectedSlot && selectedSlot === slot
-                ? "#f8bbd0"  
-                : slot.booked
-                ? "#f8d7da"  
-                : "#d4edda",  
-              cursor: "pointer",  
-            }}
- // Handle selection
+                            backgroundColor: selectedSlot && selectedSlot === slot
+                              ? "#f8bbd0"
+                              : slot.booked
+                              ? "#f8d7da"
+                              : "#d4edda",
+                            cursor: slot.booked ? "not-allowed" : "pointer",
+                          }}
                         >
                           <CardContent>
                             <Typography variant="h6">
                               {slot.startTime} - {slot.endTime}
                             </Typography>
                             {slot.booked ? (
-                              <Typography variant="body2">
-                                Booked by: {slot.bookedBy.name}
+                              <Typography variant="body2" color="error">
+                                Booked
                               </Typography>
                             ) : (
                               <Button
                                 variant="contained"
                                 color="primary"
                                 onClick={() => handleSlotClick(slot)}
-                              
                               >
                                 Book this slot
                               </Button>
@@ -415,6 +393,17 @@ const Home = () => {
                   }
                 >
                   {loading ? "Booking..." : "Book Court"}
+                </Button>
+                
+                {/* Quick access to User Dashboard */}
+                <Button
+                  variant="outlined"
+                  color="secondary"
+                  component={Link}
+                  to="/user-dashboard"
+                  sx={{ ml: 2 }}
+                >
+                  View My Bookings
                 </Button>
               </Box>
             </Box>

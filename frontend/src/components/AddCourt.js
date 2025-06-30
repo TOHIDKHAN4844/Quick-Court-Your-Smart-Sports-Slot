@@ -18,13 +18,13 @@ import {
 } from "@mui/material";
 import Sidebar from "./Sidebar";
 import { useNavigate } from "react-router-dom";
+import { useData } from "../context/DataContext";
 // const API_URL =
 //   process.env.NODE_ENV === "development"
 //     ? process.env.REACT_APP_GLOBALURL
 //     : process.env.REACT_APP_GLOBALURL;
 
 const AddCourt = () => {
-  const [centres, setCentres] = useState([]);
   const [sports, setSports] = useState([]);
   const [selectedCentre, setSelectedCentre] = useState("");
   const [selectedSport, setSelectedSport] = useState("");
@@ -35,36 +35,22 @@ const AddCourt = () => {
 
   const navigate = useNavigate();
 
+  // Use centralized data context
+  const { centres, fetchSportsForCentre, refreshData } = useData();
+
   useEffect(() => {
     // Check if the user is a manager
     const userType = localStorage.getItem("userRole");
     if (userType !== "manager") {
       // Redirect to home or show an error
       navigate("/home");
-    } else {
-      fetchCentres();
     }
   }, [navigate]);
 
-  const fetchCentres = async () => {
-    try {
-      const res = await axios.get(
-        // `${process.env.REACT_APP_GLOBALURL}/api/centres/getCentres`
-        `${config.API_URL}/api/centres/getCentres`
-      );
-      setCentres(res.data.centres || []);
-    } catch (err) {
-      showMessage("Error fetching centres", "error");
-    }
-  };
-
   const fetchSports = async (centreId) => {
     try {
-      const res = await axios.get(
-        // `${process.env.REACT_APP_GLOBALURL}/api/centres/${centreId}/sports`
-        `${config.API_URL}/api/centres/${centreId}/sports`
-      );
-      setSports(res.data.sports || []);
+      const sportsData = await fetchSportsForCentre(centreId);
+      setSports(sportsData || []);
     } catch (err) {
       showMessage("Error fetching sports", "error");
     }
@@ -77,28 +63,27 @@ const AddCourt = () => {
   };
 
   const addCourt = async () => {
-    if (!selectedCentre || !selectedSport || !courtName) {
+    if (!selectedSport || !courtName) {
       showMessage("Please fill in all fields", "warning");
       return;
     }
     const getToken = localStorage.getItem("authToken");
-    //console.log(getToken);
-    axios.defaults.withCredentials = true;
     try {
       await axios.post(
-        // `${process.env.REACT_APP_GLOBALURL}/api/centres/add-court/${selectedSport}`
         `${config.API_URL}/api/centres/add-court/${selectedSport}`,
         {
           name: courtName,
         },
         {
           headers: {
-            Authorization: `Bearer ${getToken}`, // Sending token in Authorization header
+            Authorization: `Bearer ${getToken}`,
           },
-          withCredentials: true,
         }
       );
       setCourtName("");
+      setSelectedSport("");
+      setSports([]);
+      await refreshData(); // Refresh the cache
       showMessage("Court added successfully", "success");
     } catch (err) {
       const errorMessage =

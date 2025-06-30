@@ -29,6 +29,9 @@ const StylishNavbar = () => {
             <NavDropdown title="Options" id="nav-dropdown">
               {userType !== "manager" && (
                 <>
+                  <NavDropdown.Item as={Link} to="/user-dashboard">
+                    My Bookings
+                  </NavDropdown.Item>
                   <NavDropdown.Item as={Link} to="/bookings">
                     My Bookings
                   </NavDropdown.Item>
@@ -50,6 +53,9 @@ const StylishNavbar = () => {
               {userType === "manager" && (
                 <>
                   <NavDropdown.Divider />
+                  <NavDropdown.Item as={Link} to="/manager-dashboard">
+                    Manager Dashboard
+                  </NavDropdown.Item>
                   <NavDropdown.Item as={Link} to="/addCentre">
                     Add Centre
                   </NavDropdown.Item>

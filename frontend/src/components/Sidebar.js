@@ -1,5 +1,5 @@
 // Sidebar.js
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   AppBar,
   Toolbar,
@@ -13,6 +13,8 @@ import {
   Divider,
   Box,
   Collapse,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import {
   Menu as MenuIcon,
@@ -29,25 +31,56 @@ import {
   AddCircle as AddCircleIcon,
   Book as BookIcon,
   LocationOn as LocationOnIcon,
+  Dashboard as DashboardIcon,
 } from "@mui/icons-material";
-import { Link, useNavigate } from "react-router-dom";
-import { useTheme } from "@mui/material/styles";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import config from '../config';
 
-const drawerWidth = 240;
+const drawerWidth = 280;
 
 const Sidebar = (props) => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [desktopOpen, setDesktopOpen] = useState(true); // Add desktop toggle state
   const [optionsOpen, setOptionsOpen] = useState(false);
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
+  const location = useLocation(); // Add location hook
 
   // Get userId and userType from localStorage
   const userId = localStorage.getItem("userId");
   const userType = localStorage.getItem("userRole"); // Retrieve user type
 
+  // Auto-hide sidebar when on /home route
+  useEffect(() => {
+    if (location.pathname === '/home') {
+      // Show sidebar on /home route
+      if (isMobile) {
+        setMobileOpen(true);
+      } else {
+        setDesktopOpen(true);
+      }
+    } else {
+      // Auto-hide sidebar on other routes with 2-second delay
+      const timer = setTimeout(() => {
+        if (isMobile) {
+          setMobileOpen(false);
+        } else {
+          setDesktopOpen(false);
+        }
+      }, 1000); // 2 seconds delay
+
+      // Cleanup timer if component unmounts or location changes
+      return () => clearTimeout(timer);
+    }
+  }, [location.pathname, isMobile]);
+
   const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
+    if (isMobile) {
+      setMobileOpen(!mobileOpen);
+    } else {
+      setDesktopOpen(!desktopOpen);
+    }
   };
 
   const handleOptionsClick = () => {
@@ -57,6 +90,11 @@ const Sidebar = (props) => {
   const handleLogout = () => {
     localStorage.removeItem("userId");
     localStorage.removeItem("userRole"); // Clear userRole on logout
+    localStorage.removeItem("authToken"); // Clear auth token on logout
+    
+    // Dispatch custom event to clear data cache
+    window.dispatchEvent(new CustomEvent('userLoggedOut'));
+    
     navigate("/login");
   };
 
@@ -64,33 +102,90 @@ const Sidebar = (props) => {
     <div>
       <Toolbar />
       <Divider />
-      <List>
+      <List sx={{ 
+        width: '100%',
+        minWidth: desktopOpen ? drawerWidth : 0,
+        overflow: 'hidden'
+      }}>
         {/* Home */}
-        <ListItem component={Link} to="/home" key="Home">
+        <ListItem component={Link} to="/home" key="Home" sx={{ 
+          '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
+          borderRadius: 1,
+          mx: 1,
+          mb: 0.5,
+          minWidth: desktopOpen ? 'auto' : 0,
+          opacity: desktopOpen ? 1 : 0,
+          transition: 'opacity 0.3s ease, min-width 0.3s ease'
+        }}>
           <ListItemIcon>
             <HomeIcon />
           </ListItemIcon>
           <ListItemText primary="Home" />
         </ListItem>
 
-        {/* About
-        <ListItem component={Link} to="/about" key="About">
-          <ListItemIcon>
-            <InfoIcon />
-          </ListItemIcon>
-          <ListItemText primary="About" />
-        </ListItem> */}
+        {/* Manager Dashboard - Standalone for managers */}
+        {userType === "manager" && (
+          <ListItem component={Link} to="/manager-dashboard" sx={{ 
+            '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
+            borderRadius: 1,
+            mx: 1,
+            mb: 0.5,
+            backgroundColor: 'rgba(25, 118, 210, 0.08)',
+            border: '1px solid rgba(25, 118, 210, 0.2)',
+            minWidth: desktopOpen ? 'auto' : 0,
+            opacity: desktopOpen ? 1 : 0,
+            transition: 'opacity 0.3s ease, min-width 0.3s ease'
+          }}>
+            <ListItemIcon>
+              <DashboardIcon color="primary" />
+            </ListItemIcon>
+            <ListItemText 
+              primary="Manager Dashboard" 
+              primaryTypographyProps={{ 
+                fontWeight: 'bold',
+                color: 'primary.main'
+              }}
+            />
+          </ListItem>
+        )}
 
-        {/* Contact */}
-        {/* <ListItem component={Link} to="/contact" key="Contact">
-          <ListItemIcon>
-            <ContactMailIcon />
-          </ListItemIcon>
-          <ListItemText primary="Contact" />
-        </ListItem> */}
+        {/* User Dashboard - Standalone for customers */}
+        {userType === "customer" && (
+          <ListItem component={Link} to="/user-dashboard" sx={{ 
+            '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
+            borderRadius: 1,
+            mx: 1,
+            mb: 0.5,
+            backgroundColor: 'rgba(76, 175, 80, 0.08)',
+            border: '1px solid rgba(76, 175, 80, 0.2)',
+            minWidth: desktopOpen ? 'auto' : 0,
+            opacity: desktopOpen ? 1 : 0,
+            transition: 'opacity 0.3s ease, min-width 0.3s ease'
+          }}>
+            <ListItemIcon>
+              <DashboardIcon color="success" />
+            </ListItemIcon>
+            <ListItemText 
+              primary="My Bookings" 
+              primaryTypographyProps={{ 
+                fontWeight: 'bold',
+                color: 'success.main'
+              }}
+            />
+          </ListItem>
+        )}
 
         {/* Options */}
-        <ListItem onClick={handleOptionsClick} sx={{ cursor: 'pointer' }}>
+        <ListItem onClick={handleOptionsClick} sx={{ 
+          cursor: 'pointer',
+          '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
+          borderRadius: 1,
+          mx: 1,
+          mb: 0.5,
+          minWidth: desktopOpen ? 'auto' : 0,
+          opacity: desktopOpen ? 1 : 0,
+          transition: 'opacity 0.3s ease, min-width 0.3s ease'
+        }}>
           <ListItemIcon>
             <SettingsIcon />
           </ListItemIcon>
@@ -101,18 +196,6 @@ const Sidebar = (props) => {
           <List component="div" disablePadding>
             {userType !== "customer" && (
               <>
-                {/* <ListItem component={Link} to="/bookings" sx={{ pl: 4 }}>
-                  <ListItemIcon>
-                    <BookIcon />
-                  </ListItemIcon>
-                  <ListItemText primary="My Bookings" />
-                </ListItem>
-                <ListItem component={Link} to="/centres" sx={{ pl: 4 }}>
-                  <ListItemIcon>
-                    <LocationOnIcon />
-                  </ListItemIcon>
-                  <ListItemText primary="Find Centres" />
-                </ListItem> */}
                 <Divider />
               </>
             )}
@@ -120,7 +203,16 @@ const Sidebar = (props) => {
               <ListItem
                 component={Link}
                 to="/userProfile"
-                sx={{ pl: 4 }}
+                sx={{ 
+                  pl: 4,
+                  '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
+                  borderRadius: 1,
+                  mx: 1,
+                  mb: 0.5,
+                  minWidth: desktopOpen ? 'auto' : 0,
+                  opacity: desktopOpen ? 1 : 0,
+                  transition: 'opacity 0.3s ease, min-width 0.3s ease'
+                }}
               >
                 <ListItemIcon>
                   <AccountCircleIcon />
@@ -128,7 +220,16 @@ const Sidebar = (props) => {
                 <ListItemText primary="Profile" />
               </ListItem>
             ) : (
-              <ListItem component={Link} to="/login" sx={{ pl: 4 }}>
+              <ListItem component={Link} to="/login" sx={{ 
+                pl: 4,
+                '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
+                borderRadius: 1,
+                mx: 1,
+                mb: 0.5,
+                minWidth: desktopOpen ? 'auto' : 0,
+                opacity: desktopOpen ? 1 : 0,
+                transition: 'opacity 0.3s ease, min-width 0.3s ease'
+              }}>
                 <ListItemIcon>
                   <LoginIcon />
                 </ListItemIcon>
@@ -138,7 +239,16 @@ const Sidebar = (props) => {
             {userType === "manager" && (
               <>
                 <Divider />
-                <ListItem component={Link} to="/addSport" sx={{ pl: 4 }}>
+                <ListItem component={Link} to="/addSport" sx={{ 
+                  pl: 4,
+                  '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
+                  borderRadius: 1,
+                  mx: 1,
+                  mb: 0.5,
+                  minWidth: desktopOpen ? 'auto' : 0,
+                  opacity: desktopOpen ? 1 : 0,
+                  transition: 'opacity 0.3s ease, min-width 0.3s ease'
+                }}>
                   <ListItemIcon>
                     <AddCircleIcon />
                   </ListItemIcon>
@@ -147,7 +257,16 @@ const Sidebar = (props) => {
                 <ListItem
                   component={Link}
                   to="/addCentre"
-                  sx={{ pl: 4 }}
+                  sx={{ 
+                    pl: 4,
+                    '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
+                    borderRadius: 1,
+                    mx: 1,
+                    mb: 0.5,
+                    minWidth: desktopOpen ? 'auto' : 0,
+                    opacity: desktopOpen ? 1 : 0,
+                    transition: 'opacity 0.3s ease, min-width 0.3s ease'
+                  }}
                 >
                   <ListItemIcon>
                     <AddCircleIcon />
@@ -155,7 +274,16 @@ const Sidebar = (props) => {
                   <ListItemText primary="Add Centre" />
                 </ListItem>
 
-                <ListItem component={Link} to="/addCourt" sx={{ pl: 4 }}>
+                <ListItem component={Link} to="/addCourt" sx={{ 
+                  pl: 4,
+                  '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
+                  borderRadius: 1,
+                  mx: 1,
+                  mb: 0.5,
+                  minWidth: desktopOpen ? 'auto' : 0,
+                  opacity: desktopOpen ? 1 : 0,
+                  transition: 'opacity 0.3s ease, min-width 0.3s ease'
+                }}>
                   <ListItemIcon>
                     <AddCircleIcon />
                   </ListItemIcon>
@@ -169,13 +297,29 @@ const Sidebar = (props) => {
         {/* If user is not logged in, show Login and Register */}
         {!userId && (
           <>
-            <ListItem component={Link} to="/login">
+            <ListItem component={Link} to="/login" sx={{ 
+              '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
+              borderRadius: 1,
+              mx: 1,
+              mb: 0.5,
+              minWidth: desktopOpen ? 'auto' : 0,
+              opacity: desktopOpen ? 1 : 0,
+              transition: 'opacity 0.3s ease, min-width 0.3s ease'
+            }}>
               <ListItemIcon>
                 <LoginIcon />
               </ListItemIcon>
               <ListItemText primary="Login" />
             </ListItem>
-            <ListItem component={Link} to="/register">
+            <ListItem component={Link} to="/register" sx={{ 
+              '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
+              borderRadius: 1,
+              mx: 1,
+              mb: 0.5,
+              minWidth: desktopOpen ? 'auto' : 0,
+              opacity: desktopOpen ? 1 : 0,
+              transition: 'opacity 0.3s ease, min-width 0.3s ease'
+            }}>
               <ListItemIcon>
                 <PersonAddIcon />
               </ListItemIcon>
@@ -186,7 +330,16 @@ const Sidebar = (props) => {
 
         {/* If user is logged in, show Logout button */}
         {userId && (
-          <ListItem onClick={handleLogout} sx={{ cursor: 'pointer' }}>
+          <ListItem onClick={handleLogout} sx={{ 
+            cursor: 'pointer',
+            '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
+            borderRadius: 1,
+            mx: 1,
+            mb: 0.5,
+            minWidth: desktopOpen ? 'auto' : 0,
+            opacity: desktopOpen ? 1 : 0,
+            transition: 'opacity 0.3s ease, min-width 0.3s ease'
+          }}>
             <ListItemIcon>
               <LogoutIcon />
             </ListItemIcon>
@@ -209,13 +362,17 @@ const Sidebar = (props) => {
         }}
       >
         <Toolbar>
-          {/* Menu button for mobile view */}
+          {/* Menu button for all screen sizes */}
           <IconButton
             color="inherit"
-            aria-label="open drawer"
+            aria-label="toggle drawer"
             edge="start"
             onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: "none" } }} // Show only on small screens
+            sx={{ 
+              mr: 2,
+              minWidth: 44,
+              minHeight: 44
+            }}
           >
             <MenuIcon />
           </IconButton>
@@ -230,6 +387,7 @@ const Sidebar = (props) => {
               fontFamily: "Montserrat, sans-serif",
               fontWeight: "bold",
               letterSpacing: "1px",
+              fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' }
             }}
           >
             QuickCourt
@@ -244,8 +402,12 @@ const Sidebar = (props) => {
         onClose={handleDrawerToggle}
         ModalProps={{ keepMounted: true }} // Better open performance on mobile
         sx={{
-          display: { xs: "block", sm: "none" }, // Show on extra-small screens
-          "& .MuiDrawer-paper": { boxSizing: "border-box", width: drawerWidth },
+          display: { xs: "block", md: "none" }, // Show on extra-small and small screens
+          "& .MuiDrawer-paper": { 
+            boxSizing: "border-box", 
+            width: { xs: '100vw', sm: drawerWidth },
+            maxWidth: drawerWidth
+          },
         }}
       >
         {drawer}
@@ -255,18 +417,42 @@ const Sidebar = (props) => {
       <Drawer
         variant="permanent"
         sx={{
-          display: { xs: "none", sm: "block" }, // Hide on extra-small screens
-          "& .MuiDrawer-paper": { boxSizing: "border-box", width: drawerWidth },
+          display: { xs: "none", md: "block" }, // Hide on extra-small and small screens
+          "& .MuiDrawer-paper": { 
+            boxSizing: "border-box", 
+            width: desktopOpen ? drawerWidth : 0,
+            overflowX: 'hidden',
+            borderRight: desktopOpen ? '1px solid rgba(0, 0, 0, 0.12)' : 'none',
+            transition: 'width 0.3s ease, border-right 0.3s ease'
+          },
         }}
-        open
+        open={desktopOpen}
       >
         {drawer}
       </Drawer>
 
       {/* Main content area */}
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+      <Box 
+        component="main" 
+        sx={{ 
+          flexGrow: 1, 
+          p: { xs: 2, sm: 3, md: 4 },
+          width: { 
+            xs: '100%', 
+            md: desktopOpen ? `calc(100% - ${drawerWidth}px)` : '100%'
+          },
+          minHeight: '100vh',
+          backgroundColor: '#f5f5f5',
+          transition: 'width 0.3s ease' // Smooth transition
+        }}
+      >
         <Toolbar />
-        {props.children}
+        <Box sx={{ 
+          maxWidth: '100%',
+          overflowX: 'auto'
+        }}>
+          {props.children}
+        </Box>
       </Box>
     </Box>
   );

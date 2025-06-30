@@ -1,12 +1,10 @@
 const express = require("express");
-const { createUser, loginUser } = require("../controllers/auth");
+const { createUser, loginUser, forgotPassword } = require("../controllers/auth");
 
 const router = express.Router();
 
 // Forgot password
-router.post("/forgotPassword", (req, res) => {
-  res.status(200).json({ success: true, message: "If this email is registered, you will receive a password reset link shortly." });
-});
+router.post("/forgotPassword", forgotPassword);
 
 // Update password with token
 router.post("/updatePassword/:token", (req, res) => {

@@ -162,8 +162,44 @@ const loginUser = async (req, res) => {
   }
 };
 
+// Forgot Password Controller
+const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: "Email is required." });
+  }
+  try {
+    const user = await userModel.findOne({ email });
+    if (!user) {
+      // For security, always return success
+      return res.status(200).json({ success: true, message: "If this email is registered, you will receive a password reset link shortly." });
+    }
+    // Generate a reset token
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetTokenExpiry = Date.now() + 1000 * 60 * 30; // 30 minutes
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpires = resetTokenExpiry;
+    await user.save();
+    // Send reset email
+    const resetUrl = `${API_URL}/resetPassword/${resetToken}`;
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: user.email,
+      subject: "Password Reset Request",
+      html: `<p>You requested a password reset. Click the link below to reset your password:</p>
+             <a href="${resetUrl}">${resetUrl}</a>
+             <p>This link will expire in 30 minutes.</p>`
+    });
+    return res.status(200).json({ success: true, message: "If this email is registered, you will receive a password reset link shortly." });
+  } catch (err) {
+    console.error("Forgot Password Error:", err);
+    return res.status(500).json({ error: "Server error. Please try again later." });
+  }
+};
+
 // Export the functions
 module.exports = {
   createUser,
-  loginUser
+  loginUser,
+  forgotPassword
 };

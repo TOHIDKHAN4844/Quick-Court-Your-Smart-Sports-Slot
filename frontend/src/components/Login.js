@@ -1,5 +1,5 @@
 // Login.js
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import config from "../config";
 
@@ -23,21 +23,25 @@ const Login = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const isMounted = useRef(true);
 
   useEffect(() => {
+    isMounted.current = true;
     let timer;
     if (errorMessage) {
       timer = setTimeout(() => {
-        setErrorMessage("");
+        if (isMounted.current) setErrorMessage("");
       }, 4000);
     }
     return () => {
+      isMounted.current = false;
       if (timer) clearTimeout(timer);
     };
   }, [errorMessage]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!isMounted.current) return;
     setErrorMessage("");
     setLoading(true);
 
@@ -61,8 +65,12 @@ const Login = () => {
       localStorage.setItem("authToken", response.data.authToken);
       localStorage.setItem("userRole", response.data.user.role);
 
-      navigate("/home");
+      // Dispatch custom event to trigger data initialization
+      window.dispatchEvent(new CustomEvent('userLoggedIn'));
+
+      if (isMounted.current) navigate("/home");
     } catch (error) {
+      if (!isMounted.current) return;
       if (error.response) {
         if (error.response.status === 401) {
           setErrorMessage("Invalid email or password.");
@@ -80,11 +88,10 @@ const Login = () => {
         setErrorMessage(error.message);
       }
     } finally {
-      setLoading(false);
+      if (isMounted.current) setLoading(false);
     }
-
-    setEmail("");
-    setPassword("");
+    if (isMounted.current) setEmail("");
+    if (isMounted.current) setPassword("");
   };
 
   return (

@@ -1,56 +1,42 @@
 // UserProfile.js
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import {
+  Container,
+  Typography,
   Card,
   CardContent,
   CardHeader,
-  Typography,
-  Container,
-  Grid,
   List,
   ListItem,
   ListItemText,
-  Box,
   Divider,
+  Grid,
+  Box,
   Backdrop,
   CircularProgress,
+  Button,
+  Alert,
+  IconButton,
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from "@mui/material";
+import { Link } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import { useNavigate } from "react-router-dom";
 import config from '../config';
-
-// const formatTime = (timeStr) => {
-//   // console.log("Raw time from DB:", timeStr);
-
-//   if (!timeStr || typeof timeStr !== 'string') return "Invalid Time";
-
-//   const [hourStr, minuteStr] = timeStr.split(":");
-//   let hour = parseInt(hourStr, 10);
-//   let minute = parseInt(minuteStr, 10);
-
-//   if (isNaN(hour) || isNaN(minute)) return "Invalid Time";
-
-//   // Create a UTC date using today's date
-//   const date = new Date(Date.UTC(1970, 0, 1, hour, minute));
-
-//   // Subtract 5 hours 30 minutes (330 minutes)
-//   date.setUTCMinutes(date.getUTCMinutes() + 390);
-
-//   // Format as 12-hour IST-style time
-//   return date.toLocaleTimeString('en-IN', {
-//     hour: '2-digit',
-//     minute: '2-digit',
-//     hour12: true,
-//     timeZone: 'UTC', // Stay in UTC to avoid re-shifting
-//   });
-// };
-
+import EditIcon from '@mui/icons-material/Edit';
 
 const UserProfile = () => {
   const [user, setUser] = useState({});
-  const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true); // Loading state
+  const [editOpen, setEditOpen] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
@@ -67,15 +53,6 @@ const UserProfile = () => {
           `${config.API_URL}/api/User/getUserDetailS/${userId}`
         );
         setUser(userResponse.data);
-
-        // If user is a customer, fetch bookings
-        if (userResponse.data.role === "customer") {
-          const bookingsResponse = await axios.get(
-            `${config.API_URL}/api/User/getBookingDetailS/${userId}`
-          );
-          setBookings(bookingsResponse.data);
-        }
-
         setLoading(false); // Stop loading after data is fetched
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -85,6 +62,38 @@ const UserProfile = () => {
 
     fetchData();
   }, [navigate, userId]);
+
+  const handleEditOpen = () => {
+    setNewName(user?.name || "");
+    setError("");
+    setEditOpen(true);
+  };
+
+  const handleEditClose = () => {
+    setEditOpen(false);
+    setError("");
+  };
+
+  const handleNameChange = (e) => {
+    setNewName(e.target.value);
+  };
+
+  const handleSaveName = async () => {
+    if (!newName.trim()) {
+      setError("Name cannot be empty.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await axios.patch(`${config.API_URL}/api/User/updateName/${userId}`, { name: newName });
+      setUser(res.data.user);
+      setEditOpen(false);
+    } catch (err) {
+      setError("Failed to update name. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <Sidebar>
@@ -110,6 +119,9 @@ const UserProfile = () => {
                         primary="Name:"
                         secondary={user?.name || "N/A"}
                       />
+                      <IconButton aria-label="edit" onClick={handleEditOpen} size="small">
+                        <EditIcon fontSize="small" />
+                      </IconButton>
                     </ListItem>
                     <Divider />
                     <ListItem>
@@ -130,78 +142,61 @@ const UserProfile = () => {
               </Card>
             </Grid>
 
-            {/* Bookings Card */}
+            {/* Dashboard Link for Customers */}
             {user?.role === "customer" && (
               <Grid item xs={12}>
                 <Card sx={{ borderRadius: 2, boxShadow: 3 }}>
-                  <CardHeader
-                    title="My Bookings"
-                    sx={{
-                      textAlign: "center",
-                      fontFamily: "Montserrat, sans-serif",
-                      fontWeight: "bold",
-                      color: "#6610f2",
-                    }}
-                  />
-                  <CardContent sx={{ maxHeight: 400, overflowY: "auto" }}>
-                    {bookings.length > 0 ? (
-                      bookings.map((booking, index) => (
-                        <Card
-                          key={index}
-                          sx={{ mb: 2, boxShadow: 2, borderRadius: 1 }}
-                        >
-                          <CardContent>
-                            <List>
-                              <ListItem>
-                                <ListItemText
-                                  primary="Centre:"
-                                  secondary={booking.centre}
-                                />
-                              </ListItem>
-                              <Divider />
-                              <ListItem>
-                                <ListItemText
-                                  primary="Sport:"
-                                  secondary={booking.sport}
-                                />
-                              </ListItem>
-                              <Divider />
-                              <ListItem>
-                                <ListItemText
-                                  primary="Court:"
-                                  secondary={booking.court}
-                                />
-                              </ListItem>
-                              <Divider />
-                              <ListItem>
-                                <ListItemText
-                                  primary="Date:"
-                                  secondary={booking.date}
-                                />
-                              </ListItem>
-                              <Divider />
-                              <ListItem>
-                              <ListItemText
-                                    primary="Time:"
-                                    // secondary={`${formatTime(booking.startTime)} - ${formatTime(booking.endTime)}`}
-                                    secondary={`${booking.startTime} - ${booking.endTime}`}
-  />
-                              </ListItem>
-                            </List>
-                          </CardContent>
-                        </Card>
-                      ))
-                    ) : (
-                      <Typography variant="body1" align="center">
-                        No bookings found.
+                  <CardContent>
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                      <Typography variant="body2">
+                        View and manage your court bookings in the dedicated dashboard.
                       </Typography>
-                    )}
+                    </Alert>
+                    <Box sx={{ textAlign: "center" }}>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        component={Link}
+                        to="/user-dashboard"
+                        sx={{ 
+                          fontFamily: "Montserrat, sans-serif",
+                          fontWeight: "bold"
+                        }}
+                      >
+                        View My Bookings Dashboard
+                      </Button>
+                    </Box>
                   </CardContent>
                 </Card>
               </Grid>
             )}
           </Grid>
         </Box>
+
+        {/* Edit Name Dialog */}
+        <Dialog open={editOpen} onClose={handleEditClose}>
+          <DialogTitle>Edit Name</DialogTitle>
+          <DialogContent>
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Name"
+              type="text"
+              fullWidth
+              value={newName}
+              onChange={handleNameChange}
+              disabled={saving}
+              error={!!error}
+              helperText={error}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleEditClose} disabled={saving}>Cancel</Button>
+            <Button onClick={handleSaveName} variant="contained" disabled={saving}>
+              {saving ? "Saving..." : "Save"}
+            </Button>
+          </DialogActions>
+        </Dialog>
 
         {/* Loader */}
         <Backdrop

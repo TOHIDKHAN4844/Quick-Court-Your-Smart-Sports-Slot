@@ -17,13 +17,13 @@ import {
 } from "@mui/material";
 import Sidebar from "./Sidebar";
 import { useNavigate } from "react-router-dom";
+import { useData } from "../context/DataContext";
 // const API_URL =
 //   process.env.NODE_ENV === "development"
 //     ? process.env.REACT_APP_GLOBALURL
 //     : process.env.REACT_APP_GLOBALURL;
 
 const AddSport = () => {
-  const [centres, setCentres] = useState([]);
   const [selectedCentre, setSelectedCentre] = useState("");
   const [sportName, setSportName] = useState("");
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -32,28 +32,17 @@ const AddSport = () => {
 
   const navigate = useNavigate();
 
+  // Use centralized data context
+  const { centres, refreshData } = useData();
+
   useEffect(() => {
     // Check if the user is a manager
     const userType = localStorage.getItem("userRole");
     if (userType !== "manager") {
       // Redirect to home or show an error
       navigate("/home");
-    } else {
-      fetchCentres();
     }
   }, [navigate]);
-
-  const fetchCentres = async () => {
-    try {
-      const res = await axios.get(
-        // `${process.env.REACT_APP_GLOBALURL}/api/centres/getCentres`
-        `${config.API_URL}/api/centres/getCentres`
-      );
-      setCentres(res.data.centres || []);
-    } catch (err) {
-      showMessage("Error fetching centres", "error");
-    }
-  };
 
   const showMessage = (message, severity) => {
     setSnackbarMessage(message);
@@ -71,7 +60,6 @@ const AddSport = () => {
     axios.defaults.withCredentials = true;
     try {
       await axios.post(
-        //`${process.env.REACT_APP_GLOBALURL}/api/centres/add-sport/${selectedCentre}/${sportName}`
         `${config.API_URL}/api/centres/add-sport/${selectedCentre}/${sportName}`,
         {
           name: "Jabalpur",
@@ -84,6 +72,7 @@ const AddSport = () => {
         }
       );
       setSportName("");
+      await refreshData(); // Refresh the cache
       showMessage("Sport added successfully", "success");
     } catch (err) {
       const errorMessage =

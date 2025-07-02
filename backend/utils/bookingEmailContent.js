@@ -18,10 +18,12 @@ const createBookingEmail = (userName, bookingDetails) => {
               <!-- Header -->
               <tr>
                 <td style="padding: 20px; text-align:center; background-color:#28a745;">
-                  <h1 style="color:#ffffff; margin:0;">Court Booking System</h1>
+                  <h1 style="color:#ffffff; margin:0;">Quick Court Slot</h1>
                 </td>
               </tr>
-              <!-- Body -->
+              <!-- Body -->Court Booking Team
+
+
               <tr>
                 <td style="padding: 30px;">
                   <h2 style="color:#333333;">Booking Confirmation</h2>
@@ -54,13 +56,13 @@ const createBookingEmail = (userName, bookingDetails) => {
                     </tr>
                   </table>
                   <p style="color:#555555;">We look forward to seeing you!</p>
-                  <p style="color:#555555;">Best regards,<br/>Court Booking Team</p>
+                  <p style="color:#555555;">Best regards,<br/>Quick Court Team</p>
                 </td>
               </tr>
               <!-- Footer -->
               <tr>
                 <td style="padding: 20px; text-align:center; background-color:#f4f4f4;">
-                  <p style="color:#999999; font-size:12px; margin:0;">© ${new Date().getFullYear()} Court Booking System. All rights reserved.</p>
+                  <p style="color:#999999; font-size:12px; margin:0;">© ${new Date().getFullYear()} Quick Court. All rights reserved.</p>
                 </td>
               </tr>
             </table>
